@@ -106,6 +106,13 @@ class IpzVpdParser : public ParserInterface
      */
     int writeKeywordOnHardware(const types::WriteVpdParams i_paramsToWriteData);
 
+    /**
+     * @brief API to perform sanity check on EEPROM.
+     *
+     * @return SUCCESS or FAILURE.
+     */
+    int vpdSanityCheck();
+
   private:
     /**
      * @brief Check ECC of VPD header.
