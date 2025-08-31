@@ -996,5 +996,46 @@ inline types::BinaryVector convertIntegralTypeToBytes(
     return l_result;
 }
 
+/**
+ * @brief API to perform sanity check on module vpd.
+ *
+ * @param[in] i_eepromPath - EEPROM file path.
+ *
+ * @return - Success or failure
+ *
+ * @throw std::runtime_error, sdbusplus::exception::SdBusError
+ */
+inline int vpdSanityCheck(const std::string& i_eepromPath)
+{
+    if (i_eepromPath.empty())
+    {
+        throw std::runtime_error("Empty EEPROM path");
+    }
+
+    try
+    {
+        std::cout << "DBG: Calling DBUS API for - " << i_eepromPath << "\n";
+        int l_returnValue;
+        auto l_bus = sdbusplus::bus::new_default();
+
+        auto l_method = l_bus.new_method_call(
+            constants::vpdManagerService, constants::vpdManagerObjectPath,
+            constants::vpdManagerInfName, "performVpdSanityCheck");
+
+        l_method.append(i_eepromPath);
+        auto l_result = l_bus.call(l_method);
+
+        l_result.read(l_returnValue);
+
+        std::cout << "DBG: returned from DBUS API, return code - "
+                  << l_returnValue << "\n";
+        return l_returnValue;
+    }
+    catch (const sdbusplus::exception::SdBusError& l_error)
+    {
+        throw;
+    }
+}
+
 } // namespace utils
 } // namespace vpd

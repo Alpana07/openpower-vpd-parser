@@ -371,5 +371,13 @@ class VpdTool
      * the directory from the filesystem
      */
     void clearVpdDumpDir() const noexcept;
+
+    /**
+     * @brief API to perform sanity check on EEPROM.
+     *
+     * @param[in] eepromPath - vpd path to perform sanity check
+     * @return SUCCESS or FAILURE.
+     */
+    int performSanityCheck(const std::string& l_vpdFilePath);
 };
 } // namespace vpd
