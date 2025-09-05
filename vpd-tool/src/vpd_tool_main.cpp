@@ -8,6 +8,41 @@
 #include <iostream>
 
 /**
+ * @brief Validates the record and ECC of Module VPDs.
+ *
+ * API checks the record and ECC of primary eeprom and then checks for
+ * redundant one.
+ *
+ * @return If all good returns 0, otherwise returns -1.
+ */
+int sanityCheck(const std::string primaryEeprom,
+                    const std::string redundantEeprom)
+{
+    nlohmann::json l_parsedJson;
+    vpd::VpdTool l_vpdToolObj;
+
+    if (primaryEeprom.empty() || redundantEeprom.empty())
+    {
+        std::cerr
+            << "Provided empty paths,please provide valid eeprom paths\n";
+        return vpd::constants::FAILURE;
+    }
+    auto result1 = l_vpdToolObj.performSanityCheck(primaryEeprom);
+    auto result2 = l_vpdToolObj.performSanityCheck(redundantEeprom);
+
+    if (result1 == vpd::constants::FAILURE ||
+        result2 == vpd::constants::FAILURE)
+    {
+        std::cerr
+            << "Module VPD validation has failed. Check PELs for details\n";
+        return vpd::constants::FAILURE;
+    }
+
+    std::cout << "Module VPD validation Successful.\n";
+    return vpd::constants::SUCCESS;
+}
+
+/**
  * @brief Resets the VPD on DBus for all the Frus.
  *
  * API clears the inventory persisted data and restarts the phosphor inventory
@@ -279,7 +314,9 @@ void updateFooter(CLI::App& i_app)
         "   From DBus to console in Table format: "
         "vpd-tool -i -t\n"
         "Force Reset:\n"
-        "   vpd-tool --forceReset\n");
+        "   vpd-tool --forceReset\n"
+        "Module vpd sanity check:\n"
+        "    vpd-tool --sanityCheck -P <Primary EEPROM Path> -B <Redundant EEPROM Path>\n");
 }
 
 int main(int argc, char** argv)
@@ -291,6 +328,8 @@ int main(int argc, char** argv)
     std::string l_keywordName{};
     std::string l_filePath{};
     std::string l_keywordValue{};
+    std::string l_primaryEeeprom{};
+    std::string l_redundantEeeprom{};
 
     updateFooter(l_app);
 
@@ -358,6 +397,18 @@ int main(int argc, char** argv)
     auto l_forceResetFlag = l_app.add_flag(
         "--forceReset, -f, -F",
         "Force collect for hardware. CAUTION: Developer only option.");
+
+    auto l_primaryOption =
+        l_app.add_option("--primary, -P", l_primaryEeeprom, "primary eeprom");
+    auto l_redundantOption = l_app.add_option(
+        "--redundant, -B", l_redundantEeeprom, "redundant eeprom");
+    auto l_sanityCheckFlag =
+        l_app
+            .add_flag(
+                "--sanityCheck",
+                "Do the sanity check for module vpd. It validates primary eeprom and then redundant eeprom")
+            ->needs(l_primaryOption)
+            ->needs(l_redundantOption);
 
     CLI11_PARSE(l_app, argc, argv);
 
@@ -432,6 +483,19 @@ int main(int argc, char** argv)
         return forceReset();
     }
 
+    if (!l_sanityCheckFlag->empty())
+    {
+        if (l_redundantOption->empty() || l_primaryOption->empty())
+        {
+            std::cerr
+                << "Please provide eeprom paths.\nUse --primary --redundant "
+                   "to give eeprom paths. Refer --help."
+                << std::endl;
+            return vpd::constants::FAILURE;
+        }
+
+        return sanityCheck(l_primaryEeeprom, l_redundantEeeprom);
+    }
     std::cout << l_app.help() << std::endl;
     return vpd::constants::FAILURE;
 }

@@ -12,6 +12,7 @@
 #include <tuple>
 namespace vpd
 {
+
 // {Record, Keyword} -> {attribute name, number of bits in keyword, starting bit
 // position, enabled value, disabled value}
 // Note: we do not care about min/max value for the BIOS attribute here.
@@ -1555,6 +1556,20 @@ void VpdTool::clearVpdDumpDir() const noexcept
         std::cerr << "Failed to clear VPD dump path:[" +
                          std::string(constants::badVpdPath) + "]. Error: "
                   << l_ex.what() << std::endl;
+    }
+}
+
+int VpdTool::performSanityCheck(const std::string& l_vpdFilePath)
+{
+    try
+    {
+        return utils::sanityCheckOnModuleVpd(l_vpdFilePath);
+    }
+    catch (const std::exception& e)
+    {
+        std::cout << "Exception caught for" << e.what() << "\n";
+
+        return vpd::constants::FAILURE;
     }
 }
 
