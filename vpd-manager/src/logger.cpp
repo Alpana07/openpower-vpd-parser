@@ -17,8 +17,14 @@ void Logger::logMessage(std::string_view i_message,
 
     if (i_placeHolder == PlaceHolder::COLLECTION)
     {
-        // Log it to a specific place.
-        m_logFileHandler->writeLogToFile(i_placeHolder);
+#ifdef ENABLE_FILE_LOGGING
+        if(m_fileStream.is_open())	
+            m_fileStream << l_log.str() << std::endl;
+#else
+        std::cout << l_log.str() << std::endl;
+#endif
+	    // Log it to a specific place.
+        //m_logFileHandler->writeLogToFile(i_placeHolder);
     }
     else if (i_placeHolder == PlaceHolder::PEL)
     {
@@ -41,13 +47,16 @@ void Logger::logMessage(std::string_view i_message,
 
 namespace logging
 {
-void logMessage(std::string_view message, const std::source_location& location)
+void logMessage(std::string_view message, [[maybe_unused]]const std::source_location& location)
 {
+	/*
     std::ostringstream log;
     log << "FileName: " << location.file_name() << ","
         << " Line: " << location.line() << " " << message;
 
     std::cout << log.str() << std::endl;
+    */
+	Logger::getLoggerInstance()->logMessage(message);
 }
 } // namespace logging
 } // namespace vpd
